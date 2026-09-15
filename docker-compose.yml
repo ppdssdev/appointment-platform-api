@@ -4,14 +4,14 @@ services:
     container_name: appointment-postgres
     environment:
       POSTGRES_DB: appointments
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d appointments"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d appointments"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -20,11 +20,12 @@ services:
     build: .
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/appointments
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
-      APP_USERNAME: portfolio
-      APP_PASSWORD: change-me
-      JWT_SECRET: change-this-development-secret-with-at-least-32-bytes
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      APP_USERNAME: ${APP_USERNAME:-portfolio}
+      APP_PASSWORD: ${APP_PASSWORD:-change-me}
+      APP_TENANT_ID: ${APP_TENANT_ID:-00000000-0000-0000-0000-000000000001}
+      JWT_SECRET: ${JWT_SECRET:-local-development-only-secret-change-before-deployment}
     ports:
       - "8080:8080"
     depends_on:

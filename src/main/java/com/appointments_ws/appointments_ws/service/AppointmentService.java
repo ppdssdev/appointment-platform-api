@@ -47,6 +47,8 @@ public class AppointmentService {
 
     @Transactional
     public AppointmentResponse schedule(UUID tenantId, String idempotencyKey, ScheduleAppointmentRequest request) {
+        validateTimes(request.startsAt(), request.endsAt());
+        Professional professional = lockActiveProfessional(tenantId, request.professionalId());
         Appointment existing = appointments.findByTenantIdAndIdempotencyKey(tenantId, idempotencyKey).orElse(null);
         if (existing != null) {
             if (!sameRequest(existing, request)) {
@@ -54,10 +56,8 @@ public class AppointmentService {
             }
             return response(existing);
         }
-        validateTimes(request.startsAt(), request.endsAt());
         Customer customer = customers.findByIdAndTenantId(request.customerId(), tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-        Professional professional = lockActiveProfessional(tenantId, request.professionalId());
         validateAvailability(professional, request.startsAt(), request.endsAt());
         validateNoOverlap(professional.getId(), request.startsAt(), request.endsAt(), UUID.randomUUID());
 

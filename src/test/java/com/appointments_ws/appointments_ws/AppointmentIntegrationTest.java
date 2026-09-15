@@ -25,6 +25,11 @@ import java.time.Instant;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -85,6 +90,40 @@ class AppointmentIntegrationTest {
     }
 
     @Test
+    void concurrentRetriesReturnTheSameAppointment() throws Exception {
+        ScheduleAppointmentRequest request = request(mondayAtTen, mondayAtTen.plusSeconds(3600));
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<AppointmentResponse> first = executor.submit(() -> scheduleAfterSignal(ready, start, request));
+            Future<AppointmentResponse> second = executor.submit(() -> scheduleAfterSignal(ready, start, request));
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+
+            AppointmentResponse firstResponse = first.get(15, TimeUnit.SECONDS);
+            AppointmentResponse secondResponse = second.get(15, TimeUnit.SECONDS);
+
+            assertThat(firstResponse.id()).isEqualTo(secondResponse.id());
+            assertThat(appointments.count()).isOne();
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void rejectsIdempotencyKeyReusedForDifferentPayload() {
+        appointmentService.schedule(TENANT_ID, "reused-key",
+                request(mondayAtTen, mondayAtTen.plusSeconds(3600)));
+
+        assertThatThrownBy(() -> appointmentService.schedule(TENANT_ID, "reused-key",
+                request(mondayAtTen.plusSeconds(3600), mondayAtTen.plusSeconds(7200))))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("Idempotency-Key was already used for a different request");
+        assertThat(appointments.count()).isOne();
+    }
+
+    @Test
     void confirmsCancelsAndReschedules() {
         AppointmentResponse scheduled = appointmentService.schedule(TENANT_ID, "lifecycle-1",
                 request(mondayAtTen, mondayAtTen.plusSeconds(3600)));
@@ -100,5 +139,14 @@ class AppointmentIntegrationTest {
 
     private ScheduleAppointmentRequest request(Instant start, Instant end) {
         return new ScheduleAppointmentRequest(customer.id(), professional.id(), start, end);
+    }
+
+    private AppointmentResponse scheduleAfterSignal(CountDownLatch ready, CountDownLatch start,
+                                                    ScheduleAppointmentRequest request) throws InterruptedException {
+        ready.countDown();
+        if (!start.await(5, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Concurrent schedule start signal timed out");
+        }
+        return appointmentService.schedule(TENANT_ID, "concurrent-key", request);
     }
 }

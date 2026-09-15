@@ -56,6 +56,8 @@ Local defaults are intended only for development:
 
 Override `APP_USERNAME`, `APP_PASSWORD`, `APP_TENANT_ID`, and `JWT_SECRET` outside local development. The JWT secret must contain at least 32 bytes.
 
+The tracked `.env.example` contains development-only example values and no production credentials. Copy it to `.env` when you want to customize the local Compose environment. `.env` files and cryptographic key files are ignored by Git.
+
 ## API
 
 Swagger UI is available at [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html), and the OpenAPI document is available at `/v3/api-docs`.
@@ -131,6 +133,7 @@ Docker must be available to execute the integration tests:
 Requirements: Docker with Compose support.
 
 ```bash
+cp .env.example .env
 docker compose up --build
 ```
 
