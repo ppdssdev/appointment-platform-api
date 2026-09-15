@@ -7,6 +7,7 @@ import com.appointments_ws.appointments_ws.domain.entity.Tenant;
 import com.appointments_ws.appointments_ws.domain.entity.WhatsAppChannel;
 import com.appointments_ws.appointments_ws.repository.CustomerRepository;
 import com.appointments_ws.appointments_ws.repository.WhatsAppChannelRepository;
+import com.appointments_ws.appointments_ws.domain.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -29,7 +30,7 @@ public class InboundMessageServiceImpl implements InboundMessageService {
     public InboundMessageResponse process(InboundMessageRequest request) {
         WhatsAppChannel channel = whatsAppChannelRepository
                 .findByPhoneNumberAndActiveTrue(request.destinationPhoneNumber())
-                .orElseThrow(() -> new IllegalArgumentException("Canal WhatsApp não encontrado para o número informado"));
+                .orElseThrow(() -> new ResourceNotFoundException("WhatsApp channel not found"));
 
         Tenant tenant = channel.getTenant();
 

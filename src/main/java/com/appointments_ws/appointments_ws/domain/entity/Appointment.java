@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -26,10 +26,13 @@ public class Appointment extends BaseEntity {
     private Professional professional;
 
     @Column(name = "starts_at", nullable = false)
-    private LocalDateTime startsAt;
+    private Instant startsAt;
 
     @Column(name = "ends_at", nullable = false)
-    private LocalDateTime endsAt;
+    private Instant endsAt;
+
+    @Column(name = "idempotency_key", length = 100)
+    private String idempotencyKey;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)

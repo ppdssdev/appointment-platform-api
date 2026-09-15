@@ -9,4 +9,6 @@ import java.util.UUID;
 
 public interface CustomerRepository extends JpaRepository<Customer, UUID> {
     Optional<Customer> findByTenantAndPhoneNumber(Tenant tenant, String phoneNumber);
+    Optional<Customer> findByIdAndTenantId(UUID id, UUID tenantId);
+    boolean existsByTenantIdAndPhoneNumberAndIdNot(UUID tenantId, String phoneNumber, UUID id);
 }

@@ -18,6 +18,9 @@ public class Professional extends BaseEntity {
     private String fullName;
 
     @Column(nullable = false)
-    private Boolean active;
+    private Boolean active = true;
+
+    @Column(name = "time_zone", nullable = false, length = 50)
+    private String timeZone = "UTC";
 
 }

@@ -19,6 +19,6 @@ public class WhatsAppChannel extends BaseEntity {
     private String phoneNumber;
 
     @Column(nullable = false)
-    private Boolean active;
+    private Boolean active = true;
 
 }

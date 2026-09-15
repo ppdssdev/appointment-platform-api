@@ -1,13 +1,15 @@
 package com.appointments_ws.appointments_ws.domain.dto;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record ApiErrorResponse(
-        OffsetDateTime timestamp,
+        Instant timestamp,
         int status,
         String error,
+        String code,
         String message,
+        String path,
         List<String> details
 ) {
 }
